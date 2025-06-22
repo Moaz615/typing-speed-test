@@ -1,5 +1,7 @@
 # 🎯 Typing Speed Test
 
+[**Live Demo**](https://moaz615.github.io/typing-speed-test/)
+
 A feature-rich, multi-language typing speed test application built with HTML, CSS, and vanilla JavaScript. This project provides a clean, responsive interface for users to test and improve their typing skills in various modes and languages.
 
 ## ✨ Features
@@ -29,7 +31,7 @@ A feature-rich, multi-language typing speed test application built with HTML, CS
 ## 🚀 How to Use
 
 1.  Clone or download the repository.
-2.  Open the `speed_typing_game.html` file in your favorite web browser.
+2.  Open the `index.html` file in your favorite web browser.
 3.  Select your preferred language using the buttons at the top.
 4.  Choose a game mode from the dropdown menu and adjust the settings (time, word count, etc.) if applicable.
 5.  Click the **"Start Game"** button and begin typing!
@@ -38,7 +40,7 @@ A feature-rich, multi-language typing speed test application built with HTML, CS
 
 ```
 .
-├── speed_typing_game.html  # The main HTML file for the application structure.
+├── index.html              # The main HTML file for the application structure.
 ├── style.css               # All the styles for the application.
 ├── script.js               # Core game logic, state management, and DOM manipulation.
 └── localization.js         # Contains all UI string translations for supported languages.
