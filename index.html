@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-translate="title">Typing Speed Test</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <h1 data-translate="gameTitle">🎯 Typing Speed Test</h1>
+        
+        <div class="controls">
+            <button class="btn" id="arabicBtn" data-translate="arabic">عربي</button>
+            <button class="btn active" id="englishBtn" data-translate="english">English</button>
+            <button class="btn" id="frenchBtn" data-translate="french">Français</button>
+            <button class="btn" id="spanishBtn" data-translate="spanish">Español</button>
+            <button class="btn" id="toggleStatsBtn" data-translate="toggleStats">Hide Stats</button>
+            <div class="punctuation-toggle" style="display: flex; align-items: center; gap: 6px;">
+                <input type="checkbox" id="punctuationToggle" checked style="width: 18px; height: 18px;">
+                <label for="punctuationToggle" data-translate="punctuation">Punctuation</label>
+            </div>
+            <div class="mode-section">
+                <label for="modeSelector" class="mode-label" data-translate="modeLabel">Mode:</label>
+                <select id="modeSelector" style="width:auto; min-width:120px;">
+                    <option value="passage" data-translate="modePassage">Full Passage</option>
+                    <option value="timed" data-translate="modeTimed">Timed</option>
+                    <option value="words" data-translate="modeWords">Words</option>
+                    <option value="custom" data-translate="modeCustom">Custom</option>
+                </select>
+                <select id="timeSelector" style="width:auto; min-width:90px; display:none;">
+                    <option value="15" data-translate="time15">15s</option>
+                    <option value="30" data-translate="time30">30s</option>
+                    <option value="60" selected data-translate="time60">60s</option>
+                    <option value="120" data-translate="time120">120s</option>
+                </select>
+                <select id="wordCountSelector" style="width:auto; min-width:90px; display:none;">
+                    <option value="10" data-translate="words10">10 words</option>
+                    <option value="25" data-translate="words25">25 words</option>
+                    <option value="50" data-translate="words50">50 words</option>
+                    <option value="100" data-translate="words100">100 words</option>
+                </select>
+            </div>
+            <div class="sudden-death-toggle" style="display: flex; align-items: center; gap: 6px;">
+                <input type="checkbox" id="suddenDeathToggle" style="width: 18px; height: 18px;">
+                <label for="suddenDeathToggle" data-translate="suddenDeath">Sudden Death</label>
+            </div>
+            <button class="btn start-btn" id="startBtn" data-translate="startGame">Start Game</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-value" id="timeValue">0</div>
+                <div class="stat-label" data-translate="timeLabel">الوقت (ثانية)</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="wpmValue">0</div>
+                <div class="stat-label" data-translate="wpmLabel">كلمة/دقيقة</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="accuracyValue">100%</div>
+                <div class="stat-label" data-translate="accuracyLabel">الدقة</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="errorsValue">0</div>
+                <div class="stat-label" data-translate="errorsLabel">الأخطاء</div>
+            </div>
+        </div>
+
+        <div class="text-display" id="textDisplay">
+            اضغط على "ابدأ اللعبة" لبدء التحدي!
+        </div>
+
+        <textarea id="customTextInput" class="input-area" style="display:none;" placeholder="Paste your custom text here..."></textarea>
+
+        <textarea class="input-area disabled" id="inputArea" placeholder="ابدأ بالكتابة هنا..." disabled></textarea>
+
+        <div class="game-over" id="gameOver" style="display: none;">
+            <h2 data-translate="congrats">🎉 تهانينا! لقد أنهيت التحدي</h2>
+            <div class="final-stats">
+                <div class="stat-box">
+                    <div class="stat-value" id="finalTime">0</div>
+                    <div class="stat-label" data-translate="finalTimeLabel">الوقت النهائي</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="finalWpm">0</div>
+                    <div class="stat-label" data-translate="finalWpmLabel">كلمة/دقيقة</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="finalAccuracy">0%</div>
+                    <div class="stat-label" data-translate="finalAccuracyLabel">الدقة النهائية</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="finalErrors">0</div>
+                    <div class="stat-label" data-translate="finalErrorsLabel">الأخطاء</div>
+                </div>
+            </div>
+            <button class="btn start-btn" id="resetBtn" data-translate="playAgain">لعب مرة أخرى</button>
+            <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center;">
+                <button class="btn" id="copyResultsBtn" data-translate="copyResults">Copy Results</button>
+                <button class="btn" id="shareResultsBtn" data-translate="shareResults">Share Results</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="localization.js"></script>
+    <script src="script.js"></script>
+</body>
+</html> 
