@@ -19,10 +19,6 @@ A feature-rich, multi-language typing speed test application built with HTML, CS
 - **Advanced Gameplay Options**:
     - **Punctuation Toggle**: Enable or disable punctuation in the passages. When disabled, punctuation can be typed or skipped without penalty.
     - **Sudden Death Mode**: End the game immediately after the first error for an extra challenge.
-- **Efficient Passage Fetching**:
-    - Passages are fetched from various public APIs to provide a wide variety of texts.
-    - An intelligent prefetching system loads the next passage in the background for a seamless, instant transition between texts.
-    - A rich library of local passages serves as a fallback if APIs are slow or unavailable, ensuring a smooth offline experience.
 - **User Experience**:
     - **Responsive Design**: The layout adapts beautifully to both desktop and mobile devices.
     - **Shareable Results**: Easily copy or share your final WPM, accuracy, and error count.
@@ -30,11 +26,10 @@ A feature-rich, multi-language typing speed test application built with HTML, CS
 
 ## 🚀 How to Use
 
-1.  Clone or download the repository.
-2.  Open the `index.html` file in your favorite web browser.
-3.  Select your preferred language using the buttons at the top.
-4.  Choose a game mode from the dropdown menu and adjust the settings (time, word count, etc.) if applicable.
-5.  Click the **"Start Game"** button and begin typing!
+1. Open the demo link [Typing Speed Test](https://moaz615.github.io/typing-speed-test/)
+2.  Select your preferred language using the buttons at the top.
+3.  Choose a game mode from the dropdown menu and adjust the settings (time, word count, etc.) if applicable.
+4.  Click the **"Start Game"** button and begin typing!
 
 ## 📂 Project Structure
 
