@@ -882,8 +882,17 @@ document.addEventListener('DOMContentLoaded', () => {
             charsTyped = inputArea.value.length;
             errors = totalErrors;
         }
-        let wpm = elapsedSeconds > 0 ? Math.round((charsTyped / 5) / (elapsedSeconds / 60)) : 0;
-        wpm = Math.max(0, wpm - errors * 2);
+        
+        // Calculate accuracy as a decimal (0-1)
+        const accuracy = charsTyped > 0 ? (charsTyped - errors) / charsTyped : 1;
+        
+        // Calculate raw WPM (chars/5 divided by minutes)
+        const minutesElapsed = elapsedSeconds / 60;
+        const rawWpm = minutesElapsed > 0 ? (charsTyped / 5) / minutesElapsed : 0;
+        
+        // Apply accuracy multiplier to get final WPM
+        const wpm = Math.max(0, Math.round(rawWpm * accuracy));
+        
         wpmValue.textContent = wpm;
         if (mode === 'passage') {
             timeValue.textContent = elapsedSeconds.toFixed(1);
