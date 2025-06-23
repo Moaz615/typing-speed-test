@@ -1,8 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const localTexts = {
         arabic: [
-            "في عالم مليء بالتحديات والفرص، نسعى جميعاً لتحقيق أهدافنا وطموحاتنا من خلال العمل الجاد والمثابرة.",
-            "التعلم المستمر هو مفتاح النجاح في الحياة، فالعلم نور يضيء دروب المستقبل ويفتح آفاق جديدة للإبداع والابتكار.",
             "الصداقة الحقيقية كنز ثمين لا يقدر بثمن، فهي تجعل الحياة أكثر جمالاً وتضفي عليها معنى وقيمة حقيقية.",
             "الوقت هو أغلى ما نملك في هذه الحياة، لذا يجب أن نستثمره بحكمة ونقضيه فيما ينفعنا ويفيد الآخرين.",
             "الأمل شعاع نور في ظلمات الحياة، يدفعنا للمضي قدماً رغم الصعوبات ويمنحنا القوة لمواجهة التحديات.",
@@ -168,7 +166,8 @@ document.addEventListener('DOMContentLoaded', () => {
             "La práctica hace al maestro."
         ]
     };
-
+    let recentPassages = new Set();
+    const MAX_RECENT_PASSAGES = 20;
     let currentLanguage = 'arabic';
     let currentText = '';
     let currentIndex = 0;
@@ -256,15 +255,20 @@ document.addEventListener('DOMContentLoaded', () => {
         frenchBtn.classList.toggle('active', language === 'french');
         spanishBtn.classList.toggle('active', language === 'spanish');
         updateUIText(language);
-        // Clear prefetched passage and fetch a new one in the selected language
+        
+        // Clear any prefetched passages to ensure we get content in the new language
         nextPrefetchedPassage = null;
+        
         if (!gameStarted) {
             displayWelcomeMessage();
-            // Start prefetching immediately
+            // Start prefetching immediately in the new language
             prefetchNextPassage();
+        } else {
+            // If game is running, we might want to let the current passage finish
+            // or you could force a new passage immediately
+            console.log(`Language changed to ${language} during game`);
         }
     }
-    
     arabicBtn.addEventListener('click', () => selectLanguage('arabic'));
     englishBtn.addEventListener('click', () => selectLanguage('english'));
     frenchBtn.addEventListener('click', () => selectLanguage('french'));
@@ -297,181 +301,305 @@ document.addEventListener('DOMContentLoaded', () => {
         return text.replace(/\u0671/g, '\u0627');
     }
 
+
+
+
     async function fetchSinglePassage(language) {
         function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+        
+        // Function to get a unique passage from an array
+        function getUniquePassage(passages) {
+            if (!passages || passages.length === 0) return null;
+            
+            // Filter out recently used passages
+            let availablePassages = passages.filter(p => !recentPassages.has(p));
+            
+            // If we've used all passages, clear the recent list and start over
+            if (availablePassages.length === 0) {
+                console.log('All passages used, clearing recent list');
+                recentPassages.clear();
+                availablePassages = passages;
+            }
+            
+            return pick(availablePassages);
+        }
+        
+        // Function to add passage to recent list
+        function addToRecentPassages(passage) {
+            recentPassages.add(passage);
+            // Keep only the most recent passages
+            if (recentPassages.size > MAX_RECENT_PASSAGES) {
+                const oldestPassage = recentPassages.values().next().value;
+                recentPassages.delete(oldestPassage);
+            }
+        }
+        
         let passage = null;
         let success = false;
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject('timeout'), 2000));
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject('timeout'), 3000));
+        
         const fetchPromise = (async () => {
-            if (language === 'arabic') {
-                const apis = [
-                    async () => {
-                        const response = await fetch('https://raw.githubusercontent.com/r-spacex/source-code/main/arabic-quotes/db.json');
-                        if (!response.ok) throw new Error('Arabic Quotes failed');
-                        const data = await response.json();
-                        const quotes = data.quotes.filter(q => isGoodLength(q.quote));
-                        if (quotes.length > 0) return pick(quotes).quote;
-                        throw new Error('No good Arabic quote');
-                    },
-                    async () => {
-                        const surah = Math.floor(Math.random() * 114) + 1;
-                        const ayah = Math.floor(Math.random() * 7) + 1;
-                        const response = await fetch(`https://api.alquran.cloud/v1/ayah/${surah}:${ayah}/ar.alafasy`);
-                        if (!response.ok) throw new Error('Quran API failed');
-                        const data = await response.json();
-                        if (isGoodLength(data.data.text)) return data.data.text;
-                        throw new Error('No good ayah from Quran API');
-                    },
-                    async () => {
-                        const response = await fetch('https://quotes.rest/qod?language=ar');
-                        if (!response.ok) throw new Error('They Said So AR failed');
-                        const data = await response.json();
-                        if (data && data.contents && data.contents.quotes && data.contents.quotes[0]) {
-                            let text = data.contents.quotes[0].quote;
-                            if (isGoodLength(text)) return text;
-                        }
-                        throw new Error('No good quote from They Said So AR');
-                    }
-                ];
-                const shuffled = apis.sort(() => Math.random() - 0.5);
-                for (let api of shuffled) {
-                    try {
-                        let t = await api();
-                        t = removeArabicDiacritics(t);
-                        passage = t;
-                        success = true;
-                        break;
-                    } catch (e) { /* try next */ }
-                }
-            } else if (language === 'french') {
-                const apis = [
-                    async () => {
-                        // Quotable.io supports French
-                        const response = await fetch('https://api.quotable.io/random?lang=fr');
-                        if (!response.ok) throw new Error('Quotable FR failed');
-                        const data = await response.json();
-                        if (isGoodLength(data.content)) return data.content;
-                        throw new Error('No good French quote');
-                    },
-                    async () => {
-                        // Local fallback for French
-                        throw new Error('No French API');
-                    }
-                ];
-                const shuffled = apis.sort(() => Math.random() - 0.5);
-                for (let api of shuffled) {
-                    try {
-                        let t = await api();
-                        passage = t;
-                        success = true;
-                        break;
-                    } catch (e) { /* try next */ }
-                }
-            } else if (language === 'spanish') {
-                const apis = [
-                    async () => {
-                        // Quotable.io supports Spanish
-                        const response = await fetch('https://api.quotable.io/random?lang=es');
-                        if (!response.ok) throw new Error('Quotable ES failed');
-                        const data = await response.json();
-                        if (isGoodLength(data.content)) return data.content;
-                        throw new Error('No good Spanish quote');
-                    },
-                    async () => {
-                        // Local fallback for Spanish
-                        throw new Error('No Spanish API');
-                    }
-                ];
-                const shuffled = apis.sort(() => Math.random() - 0.5);
-                for (let api of shuffled) {
-                    try {
-                        let t = await api();
-                        passage = t;
-                        success = true;
-                        break;
-                    } catch (e) { /* try next */ }
-                }
-            } else {
-                const apis = [
-                    async () => {
-                        let tries = 0;
-                        while (tries < 5) {
-                            const response = await fetch('https://api.quotable.io/random');
-                            if (!response.ok) throw new Error('Quotable failed');
+            let attempts = 0;
+            const maxAttempts = 5;
+            
+            while (attempts < maxAttempts && !success) {
+                attempts++;
+                
+                if (language === 'arabic') {
+                    const apis = [
+                        async () => {
+                            const response = await fetch('https://raw.githubusercontent.com/r-spacex/source-code/main/arabic-quotes/db.json');
+                            if (!response.ok) throw new Error('Arabic Quotes failed');
                             const data = await response.json();
-                            if (isGoodLength(data.content)) return data.content;
-                            tries++;
-                        }
-                        throw new Error('No good quote from Quotable');
-                    },
-                    async () => {
-                        let tries = 0;
-                        while (tries < 5) {
-                            const response = await fetch('https://baconipsum.com/api/?type=meat-and-filler&sentences=3');
-                            if (!response.ok) throw new Error('Bacon Ipsum failed');
+                            const quotes = data.quotes.filter(q => isGoodLength(q.quote));
+                            const uniqueQuote = getUniquePassage(quotes.map(q => q.quote));
+                            if (uniqueQuote) return uniqueQuote;
+                            throw new Error('No unique Arabic quote available');
+                        },
+                        async () => {
+                            // Try multiple random surahs and ayahs to get variety
+                            const surah = Math.floor(Math.random() * 114) + 1;
+                            const maxAyah = surah === 1 ? 7 : Math.min(20, Math.floor(Math.random() * 10) + 1);
+                            const ayah = Math.floor(Math.random() * maxAyah) + 1;
+                            const response = await fetch(`https://api.alquran.cloud/v1/ayah/${surah}:${ayah}/ar.alafasy`);
+                            if (!response.ok) throw new Error('Quran API failed');
                             const data = await response.json();
-                            let text = Array.isArray(data) ? data[0] : data;
-                            if (isGoodLength(text)) return text;
-                            tries++;
-                        }
-                        throw new Error('No good passage from Bacon Ipsum');
-                    },
-                    async () => {
-                        let tries = 0;
-                        while (tries < 5) {
-                            const response = await fetch('https://uselessfacts.jsph.pl/random.json?language=en');
-                            if (!response.ok) throw new Error('Useless Facts failed');
-                            const data = await response.json();
-                            if (isGoodLength(data.text)) return data.text;
-                            tries++;
-                        }
-                        throw new Error('No good fact from Useless Facts');
-                    },
-                    async () => {
-                        let tries = 0;
-                        while (tries < 5) {
-                            const response = await fetch('https://quotes.rest/qod?language=en');
-                            if (!response.ok) throw new Error('They Said So failed');
+                            if (isGoodLength(data.data.text) && !recentPassages.has(data.data.text)) {
+                                return data.data.text;
+                            }
+                            throw new Error('Ayah already used or not good length');
+                        },
+                        async () => {
+                            const response = await fetch('https://quotes.rest/qod?language=ar');
+                            if (!response.ok) throw new Error('They Said So AR failed');
                             const data = await response.json();
                             if (data && data.contents && data.contents.quotes && data.contents.quotes[0]) {
                                 let text = data.contents.quotes[0].quote;
-                                if (isGoodLength(text)) return text;
+                                if (isGoodLength(text) && !recentPassages.has(text)) return text;
                             }
-                            tries++;
+                            throw new Error('No unique quote from They Said So AR');
                         }
-                        throw new Error('No good quote from They Said So');
+                    ];
+                    
+                    // Try APIs in random order
+                    const shuffled = apis.sort(() => Math.random() - 0.5);
+                    for (let api of shuffled) {
+                        try {
+                            let text = await api();
+                            text = removeArabicDiacritics(text);
+                            if (!recentPassages.has(text)) {
+                                passage = text;
+                                success = true;
+                                break;
+                            }
+                        } catch (e) { 
+                            console.log('Arabic API failed:', e.message);
+                        }
                     }
-                ];
-                const shuffled = apis.sort(() => Math.random() - 0.5);
-                for (let api of shuffled) {
-                    try {
-                        let t = await api();
-                        passage = t;
-                        success = true;
-                        break;
-                    } catch (e) { /* try next */ }
+                    
+                } else if (language === 'french') {
+                    const apis = [
+                        async () => {
+                            // Try different authors and tags to get variety
+                            const tags = ['wisdom', 'motivational', 'life', 'success', 'inspirational'];
+                            const randomTag = tags[Math.floor(Math.random() * tags.length)];
+                            const response = await fetch(`https://api.quotable.io/random?lang=fr&tags=${randomTag}&minLength=100&maxLength=1000`);
+                            if (!response.ok) throw new Error('Quotable FR with tags failed');
+                            const data = await response.json();
+                            if (isGoodLength(data.content) && !recentPassages.has(data.content)) {
+                                return data.content;
+                            }
+                            throw new Error('French quote already used');
+                        },
+                        async () => {
+                            const response = await fetch('https://api.quotable.io/random?lang=fr');
+                            if (!response.ok) throw new Error('Quotable FR failed');
+                            const data = await response.json();
+                            if (isGoodLength(data.content) && !recentPassages.has(data.content)) {
+                                return data.content;
+                            }
+                            throw new Error('French quote already used or bad length');
+                        }
+                    ];
+                    
+                    for (let api of apis) {
+                        try {
+                            let text = await api();
+                            if (!recentPassages.has(text)) {
+                                passage = text;
+                                success = true;
+                                break;
+                            }
+                        } catch (e) { 
+                            console.log('French API failed:', e.message);
+                        }
+                    }
+                    
+                } else if (language === 'spanish') {
+                    const apis = [
+                        async () => {
+                            const tags = ['wisdom', 'motivational', 'life', 'success', 'inspirational'];
+                            const randomTag = tags[Math.floor(Math.random() * tags.length)];
+                            const response = await fetch(`https://api.quotable.io/random?lang=es&tags=${randomTag}&minLength=100&maxLength=1000`);
+                            if (!response.ok) throw new Error('Quotable ES with tags failed');
+                            const data = await response.json();
+                            if (isGoodLength(data.content) && !recentPassages.has(data.content)) {
+                                return data.content;
+                            }
+                            throw new Error('Spanish quote already used');
+                        },
+                        async () => {
+                            const response = await fetch('https://api.quotable.io/random?lang=es');
+                            if (!response.ok) throw new Error('Quotable ES failed');
+                            const data = await response.json();
+                            if (isGoodLength(data.content) && !recentPassages.has(data.content)) {
+                                return data.content;
+                            }
+                            throw new Error('Spanish quote already used or bad length');
+                        }
+                    ];
+                    
+                    for (let api of apis) {
+                        try {
+                            let text = await api();
+                            if (!recentPassages.has(text)) {
+                                passage = text;
+                                success = true;
+                                break;
+                            }
+                        } catch (e) { 
+                            console.log('Spanish API failed:', e.message);
+                        }
+                    }
+                    
+                } else { // English
+                    const apis = [
+                        async () => {
+                            // Use different tags and authors for variety
+                            const tags = ['wisdom', 'motivational', 'life', 'success', 'inspirational', 'famous-quotes'];
+                            const randomTag = tags[Math.floor(Math.random() * tags.length)];
+                            const response = await fetch(`https://api.quotable.io/random?tags=${randomTag}&minLength=100&maxLength=1000`);
+                            if (!response.ok) throw new Error('Quotable with tags failed');
+                            const data = await response.json();
+                            if (isGoodLength(data.content) && !recentPassages.has(data.content)) {
+                                return data.content;
+                            }
+                            throw new Error('Quote already used');
+                        },
+                        async () => {
+                            const response = await fetch('https://api.quotable.io/random?minLength=100&maxLength=1000');
+                            if (!response.ok) throw new Error('Quotable failed');
+                            const data = await response.json();
+                            if (isGoodLength(data.content) && !recentPassages.has(data.content)) {
+                                return data.content;
+                            }
+                            throw new Error('Quote already used or bad length');
+                        },
+                        async () => {
+                            // Use different types of bacon ipsum for variety
+                            const types = ['all-meat', 'meat-and-filler'];
+                            const randomType = types[Math.floor(Math.random() * types.length)];
+                            const sentences = Math.floor(Math.random() * 3) + 3; // 3-5 sentences
+                            const response = await fetch(`https://baconipsum.com/api/?type=${randomType}&sentences=${sentences}`);
+                            if (!response.ok) throw new Error('Bacon Ipsum failed');
+                            const data = await response.json();
+                            let text = Array.isArray(data) ? data[0] : data;
+                            if (isGoodLength(text) && !recentPassages.has(text)) {
+                                return text;
+                            }
+                            throw new Error('Bacon ipsum already used or bad length');
+                        },
+                        async () => {
+                            const response = await fetch('https://uselessfacts.jsph.pl/random.json?language=en');
+                            if (!response.ok) throw new Error('Useless Facts failed');
+                            const data = await response.json();
+                            if (isGoodLength(data.text) && !recentPassages.has(data.text)) {
+                                return data.text;
+                            }
+                            throw new Error('Fact already used or bad length');
+                        }
+                    ];
+                    
+                    const shuffled = apis.sort(() => Math.random() - 0.5);
+                    for (let api of shuffled) {
+                        try {
+                            let text = await api();
+                            if (!recentPassages.has(text)) {
+                                passage = text;
+                                success = true;
+                                break;
+                            }
+                        } catch (e) { 
+                            console.log('English API failed:', e.message);
+                        }
+                    }
+                }
+                
+                // If we got a passage, break out of the attempts loop
+                if (success) break;
+                
+                // Wait a bit before next attempt
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            // If no API succeeded after all attempts, use local fallback
+            if (!success) {
+                console.log(`All APIs failed for ${language}, using local fallback`);
+                const fallbackTexts = localTexts[language] && localTexts[language].filter(isGoodLength);
+                const uniqueLocal = getUniquePassage(fallbackTexts);
+                
+                if (uniqueLocal) {
+                    let text = uniqueLocal;
+                    if (language === 'arabic') text = removeArabicDiacritics(text);
+                    passage = text;
+                    success = true;
+                } else {
+                    // If no unique local passage, create a default message
+                    const defaultMessages = {
+                        arabic: `النص غير متاح حالياً ${Date.now()}. يرجى المحاولة مرة أخرى.`,
+                        english: `Text not available at the moment ${Date.now()}. Please try again.`,
+                        french: `Texte non disponible pour le moment ${Date.now()}. Veuillez réessayer.`,
+                        spanish: `Texto no disponible en este momento ${Date.now()}. Por favor, inténtelo de nuevo.`
+                    };
+                    passage = defaultMessages[language] || defaultMessages.english;
                 }
             }
-            if (!success) {
-                // Fallback to local
-                const fallbackTexts = localTexts[language] && localTexts[language].filter(isGoodLength);
-                let t = fallbackTexts && fallbackTexts.length > 0 ? fallbackTexts[Math.floor(Math.random() * fallbackTexts.length)] : 'No passage available.';
-                if (language === 'arabic') t = removeArabicDiacritics(t);
-                passage = t;
+            
+            // Add the passage to recent list
+            if (passage) {
+                addToRecentPassages(passage);
             }
+            
             return passage;
         })();
+        
         try {
             return await Promise.race([fetchPromise, timeoutPromise]);
         } catch (e) {
-            // On timeout or error, fallback to local
+            console.log(`Timeout or error for ${language}:`, e);
+            // On timeout or error, use local fallback with uniqueness check
             const fallbackTexts = localTexts[language] && localTexts[language].filter(isGoodLength);
-            let t = fallbackTexts && fallbackTexts.length > 0 ? fallbackTexts[Math.floor(Math.random() * fallbackTexts.length)] : 'No passage available.';
-            if (language === 'arabic') t = removeArabicDiacritics(t);
-            return t;
+            const uniqueLocal = getUniquePassage(fallbackTexts);
+            
+            if (uniqueLocal) {
+                let text = uniqueLocal;
+                if (language === 'arabic') text = removeArabicDiacritics(text);
+                addToRecentPassages(text);
+                return text;
+            } else {
+                // Create a unique default message using timestamp
+                const defaultMessages = {
+                    arabic: `النص غير متاح حالياً ${Date.now()}. يرجى المحاولة مرة أخرى.`,
+                    english: `Text not available at the moment ${Date.now()}. Please try again.`,
+                    french: `Texte non disponible pour le moment ${Date.now()}. Veuillez réessayer.`,
+                    spanish: `Texto no disponible en este momento ${Date.now()}. Por favor, inténtelo de nuevo.`
+                };
+                const message = defaultMessages[language] || defaultMessages.english;
+                addToRecentPassages(message);
+                return message;
+            }
         }
     }
-
     async function prefetchNextPassage() {
         if (prefetching) return;
         prefetching = true;
@@ -892,10 +1020,18 @@ document.addEventListener('DOMContentLoaded', () => {
         accuracyValue.textContent = '100%';
         errorsValue.textContent = '0';
         wordsTypedSoFar = 0;
+        
+        // Clear passage history to allow fresh passages
+        resetPassageHistory();
+        
         updateUIText(currentLanguage);
         displayWelcomeMessage();
         prefetchNextPassage();
     }
+function resetPassageHistory() {
+    recentPassages.clear();
+    console.log('Passage history cleared');
+}
 
     // Initial setup
     selectLanguage('english');
